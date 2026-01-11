@@ -220,24 +220,62 @@ for i, chunk in enumerate(reranked_chunks):
 - 重排前：三件秘密道具所在片段排在第2位；
 - 重排后：三件秘密道具所在片段排在第1位；
 - 由此可见，<font color=red>重排的效果确实要比召回好很多</font>；
+- <font color=red>重排阶段：使用到的cross-encoder模型可以非常准确识别哪些片段，与用户问题最为相关</font>；
 
 ---
 
+## 【2.5】生成阶段
 
+1. 生成阶段需要使用一个大模型，本文选用的是 Gemini 2.5 Flash。这个模型最大优点是不要钱。
 
+   1. 需要事先注册一个Gemini的API key，才能够使用这个模型；
 
+   2. 创建 api-key，[](https://aistudio.google.com/api-keys) 
 
+      1. 在项目目录中新建.env文件，把apikeyk粘贴进去，示例如下：
 
+      2. ```shell
+         GEMINI_API_KEY=AIzaSyAm2CnolApElmPdsJhMl9eOF4Wz2fyBtlU
+         ```
 
+### 【2.5.1】送入提示词给大模型生成答案
 
+```python
+from dotenv import load_dotenv
+from google import genai
 
+# 把写入到.env文件中的api-key加载到环境变量
+load_dotenv()
+# 创建gemini客户端
+google_client = genai.Client()
 
+# 定义生成函数-送入提示词调用大模型
+def generate(query : str, chunks: List[str]) -> str:
+    prompt = f"""你是一位知识助手，请根据用户的问题和下列片段生成准确的回答。
 
+    用户问题：{query}
+    相关片段：
+    {"\n\n".join(chunks)}
 
+    请基于上述内容作答，不要编造信息。"""
+    print(f"提示词：{prompt}\n\n---\n")
 
+    response = google_client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
 
+    # 返回大模型生成的结果
+    return response.text
 
+# 调用生成函数
+answer = generate(query, reranked_chunks)
+print(answer)
+```
 
+【生成结果】
+
+![](../img/05_12.png)
 
 
 
