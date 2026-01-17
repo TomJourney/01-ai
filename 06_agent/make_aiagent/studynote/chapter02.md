@@ -1,4 +1,4 @@
-【README】
+# 【README】
 
 本文总结自【动手做aiagent】，作者黄佳；
 
@@ -19,7 +19,7 @@
    1. 拥有通用推理能力的大模型，是推动agent从静态执行者向动态决策者转变的关键；
    2. 研究人员利用大模型构造agent的大脑；
    3. agent通过将大模型作为主要组件来扩展感知和行动空间，并通过策略和工具来制订具体的行动计划；
-4. 世界知识：基于大模型
+4. agent具备推理和规划能力：研究人员通过思维链（Chain of Thought， Cot），ReAct（Reasoning and Acting，推理并行动）和问题分解（Problem Decomposition）等逻辑框架，引导agent展现出强大的推理和规划能力；
 5. ReAct：
 
 ---
