@@ -26,6 +26,50 @@
 
 ---
 
-# 【1】用ReAct框架实现简单Agent
+# 【2】基于大模型的Agent技术框架
 
-【】
+## 【2.1】Agent的四大要素
+
+1. <font color=red>基于大模型的Agent具备四大要素（组件）</font>：
+   1. 规划；（需要具备规划能力，以有效执行复杂任务）
+   2. 记忆；（利用外部向量存储和快速检索）
+   3. 工具；（外部工具可以扩展agent的能力，使其能够执行更复杂的任务）
+   4. 执行；（agent基于规划和记忆来执行具体行动，或者调用一个工具来执行具体行动）
+
+2. 其他资料：
+   1. agent推理流程：
+      1. refer2 [https://modelengine.csdn.net/690b1f505511483559e27932.html](https://modelengine.csdn.net/690b1f505511483559e27932.html)
+      2. refer2 [https://zhuanlan.zhihu.com/p/1919338285160965135](https://zhuanlan.zhihu.com/p/1919338285160965135)
+
+---
+
+## 【2.5】agent的推理引擎：ReAct框架
+
+1. ReAct定义：Reasoning and Acting，推理并行动，指导大模型推理和行动的一种框架；
+
+---
+
+### 【2.5.2】用ReAct框架实现简单Agent
+
+1. 准备工作：
+   1. 步骤1：申请openai的api key，openai大模型开发的api 密钥； [https://platform.openai.com/docs/quickstart](https://platform.openai.com/docs/quickstart)
+   2. 步骤2：申请SerpApi_api_key， google搜索工具的api密钥；[https://serpapi.com/dashboard](https://serpapi.com/dashboard)
+2. 安装langchain（包括langchain hub， langchain openai）， openai 和 SerpApi的包。
+
+```shell
+pip install langchain
+pip install langchainhub
+pip install langchain-openai
+pip install OpenAI
+pip install google-search-results
+
+```
+
+3. 设置openai和SerpApi秘钥； 
+
+
+
+ 
+
+
+
