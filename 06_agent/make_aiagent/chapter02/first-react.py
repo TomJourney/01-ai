@@ -1,8 +1,5 @@
 import os
 
-os.environ['OPENAPI_API_KEY'] = 'key1'
-os.environ['SERPAIP_API_KEY'] = 'key2'
-
 # ReAct实现逻辑的完整代码：
 from langchain import hub
 prompt = hub.pull("hwchase17/react")
