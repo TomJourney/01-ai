@@ -1,7 +1,7 @@
 import os
 
-os.environ['OPENAPI_API_KEY'] = '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'
-os.environ['SERPAIP_API_KEY'] = '5b05073e8a4601579f14806971b3768d1fb78f21101b1a961981bd88ea1a6bf3'
+os.environ['OPENAPI_API_KEY'] = 'key1'
+os.environ['SERPAIP_API_KEY'] = 'key2'
 
 # ReAct实现逻辑的完整代码：
 from langchain import hub
