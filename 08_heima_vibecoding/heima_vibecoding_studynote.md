@@ -234,17 +234,98 @@ find /Users/rong/.claude -name "MEMORY.md" -o -name "memory" -type d 2>/dev/null
 
 # 【13】rewind命令回退代码
 
+提示词1：
 
+```c++
+请帮我将APP的名字修改为记账APP
+```
 
+## 【13.1】claude命令
 
+1. 在终端打开claude，执行/diff 命令，查看claude修改的代码
 
+![image-20260812001](./img/vibec_13_diff.png)
 
+2. 双击esc键，打开rewind弹出框(代码回退)；【rewind：倒带】
 
+![image-20260812002](./img/vibec_13_rewind.png)
 
+并选择continue，回退代码；
 
+![image-20260812064150299](img/vibec_13_rewind_continue.png)
 
+<br>
 
+---
 
+# 【14】工程化控制-把代码推送到git远端仓库
+
+## 【14.1】推送本地代码到远程仓库
+
+提示词1：
+
+```c++
+我即将将当前代码仓库推送到远程gitee上，但我需要得到公私钥，其中公钥要存放在gitee上，你帮我看看我的电脑是否有可用的公私钥？有的话，直接给我显示，没有的话，帮我创建好，然后直接显示公钥；
+```
+
+把公钥添加到github或gitee的公钥；
+
+<br>
+
+提示词2：
+
+```
+简易的命令行入门教程:
+Git 全局设置:
+
+git config --global user.name "tom-journey"
+git config --global user.email "searonelove@sina.com"
+创建 git 仓库:
+
+mkdir xiaoma-account
+cd xiaoma-account
+git init 
+touch README.md
+git add README.md
+git commit -m "first commit"
+git remote add origin https://gitee.com/pacosonswjtu/xiaoma-account.git
+git push -u origin "master"
+已有仓库?
+
+cd existing_git_repo
+git remote add origin https://gitee.com/pacosonswjtu/xiaoma-account.git
+git push -u origin "master"
+
+我在gitee上创建了仓库，它给了一堆命令，我不懂，你帮我做。
+```
+
+【代码推送成功】
+
+![image-20260812071220403](img/vibec_14_push2repo.png)
+
+<br>
+
+## 【14.2】本地新增readme.md文件并推送到远程repo
+
+提示词1：
+
+```c++
+帮我编写一个README.md文件，写好后，本地添加存档点，并推送到gitee上。
+```
+
+提示词2：
+
+```c++
+帮我看看该项目有哪些存档点
+```
+
+![image-20260812071859023](img/vibec_14_qry_doc.png)
+
+<br>
+
+---
+
+【15】
 
 
 
