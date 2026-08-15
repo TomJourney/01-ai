@@ -1006,19 +1006,92 @@ exit 0
 
 1. skill有本地skill，也就是在某个项目中，还有全局技能，也就是可以被所有项目使用；
 
+<br>
 
+---
 
+# 【claude生成】***黑马记账 · 智能体与技能调用地图
 
+> 本文档整理：gitcommit-agent（存档指挥官）调用了哪些子智能体和技能、各子智能体又调用了哪些技能。
+> 最后更新：2026-08-16
 
+---
 
+## 一、总览图
 
+```
+gitcommit-agent（存档指挥官）
+├── 并行派出 → tester（测试员）
+│       └── 调用技能：unit-test（单元测试）
+├── 并行派出 → quality-engineer（质量工程师）
+│       ├── 调用技能：comments-check（注释检查）
+│       ├── 调用技能：security-audit（安全审计）
+│       └── 直接跑命令：npm run build（编译检查）+ npx vitest run（单元测试）
+└── 自己调用 → git-save 技能（git 存档并推送远程）
+```
 
+---
 
+## 二、gitcommit-agent 的两种模式
 
+| 模式 | 触发词 | 派出的子智能体 | 最后调用 |
+|------|--------|---------------|---------|
+| **完整存档**（默认） | 存档 / 提交代码 / 提交 / commit / git存档 | tester + quality-engineer **并行**，两个都通过才继续 | git-save（正常提交） |
+| **快速存档** | 快速存档 / 快速提交 | 只派 tester（速度快） | git-save（传参 `fast`，走 `--no-verify` 快速通道） |
 
+---
 
+## 三、子智能体清单及绑定的技能
 
+### 1. gitcommit-agent（存档指挥官）
 
+- **定义文件**：`.claude/agents/gitcommit-agent.md`
+- **绑定的技能**：`git-save`
+- **职责**：提交前把检查跑完、把通行证拿到手，再存档。不替子智能体写通行证，只验证文件在不在。
+
+### 2. tester（测试员）
+
+- **定义文件**：`.claude/agents/tester.md`
+- **绑定的技能**：`unit-test`
+- **职责**：补测试 → 跑测试 → 出报告；全部通过则签发 `test-reports/.passed/tests.passed` 通行证，有失败则作废通行证。
+
+### 3. quality-engineer（质量工程师）
+
+- **定义文件**：`.claude/agents/quality-engineer.md`
+- **绑定的技能**：`comments-check`、`security-audit`
+- **职责**：做四项体检（编译 / 单元测试 / 注释 / 安全），达标则签发 `test-reports/.passed/quality.passed` 通行证，不达标则作废通行证。
+
+---
+
+## 四、各技能说明
+
+| 技能 | 位置 | 被谁调用 | 干的活 |
+|------|------|---------|--------|
+| git-save | （内置技能） | gitcommit-agent | 提交代码并推送到远程仓库（Gitee） |
+| unit-test | `.claude/skills/unit-test/` | tester | 补写/运行单元测试（`npx vitest run --coverage`），生成测试报告 |
+| comments-check | `.claude/skills/comments-check/` | quality-engineer | 跑统计脚本拿注释占比 + 逐文件审阅三类问题（缺失 / 不匹配 / 非小白视角） |
+| security-audit | `.claude/skills/security-audit/` | quality-engineer | 跑扫描脚本 + `npm audit`（只查不改）+ 人工审阅，按 🔴🟡🟢 分级 |
+
+---
+
+## 五、没被任何子智能体调用的技能
+
+这些是**主助手直接使用**的项目技能，不进智能体体系：
+
+| 技能 | 用途 |
+|------|------|
+| launch-app | 启动黑马记账 App（开发模式） |
+| rebuild-app | 重新编译打包 App |
+
+> 另外 `gitcommit-ai-note`（AI 笔记存档）、`go-out-checklist`（出门清单）、`meeting-summary`（会议总结）是用户个人技能，与本项目无关。
+
+---
+
+## 六、通行证协作机制（一句话版）
+
+子智能体负责**干活和签通行证**（`test-reports/.passed/` 下的两个通过文件，内容第一行是代码指纹），gitcommit-agent 只负责**验证通行证存在 + 调 git-save 提交**，质量门卫钩子在 commit 时复核通行证和代码指纹。
+
+分工原则：**检查的不管提交，提交的不管检查**。
 
 
 
