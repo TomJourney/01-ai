@@ -812,15 +812,199 @@ claude的回复：
 
 ---
 
+## 【20.2】开发hooks钩子拦截工具
+
+提示词1：
+
+```c++
+我想要实现一个效果，对于git commit进行拦截，配置一个hook。
+拦截后会检查，是否通过了单元测试和质量检查，通过了方形，允许存档，不通过则拒绝；
+
+如何验证是否通过单元测试和质量检测，就需要改造目前有的2个agent，即：tester和quality-engineer，这让2个agent在完成工作后，形成通过的标记文件；
+
+再新建一个agent，名字叫做gitcommit-agent， 功能就是：调用该agent后会并行执行tester和quality-audit这2个agent，然后再调用git-save技能进行提交
+
+你来看看该想法的可行性，以及给出行动方案的规划细节，我们讨论一下；
+```
+
+<br>
+
+### 【20.2.1】回复claude问题
+
+![image-20260815194905490](img/vibec_20_02.png)
+
+<br>
+
+claude整理的改造方案：
+
+![image-20260815195042418](img/vibec_20_03.png)
+
+<br>
+
+### 【20.2.2】存档钩子gitcommit子智能体构建结果
+
+![image-20260815200422801](img/vibec_20_04.png)
+
+【gitcommit子智能体-gitcommit-agent.md文档全文】
+
+```markdown
+---
+name: gitcommit-agent
+description: 存档指挥官：先并行派出 tester（单元测试）和 quality-engineer（质量体检）做检查，都通过后调用 git-save 技能提交并推送远程。当用户要求"存档/提交代码/提交/commit/git存档"（完整存档）或"快速存档/快速提交"（只跑单元测试，速度快）时使用。
+tools: Agent, Skill, Bash, Read, Glob, Grep
+model: sonnet
+skills: git-save
+---
+
+你是黑马记账项目的"存档指挥官"。项目装了**质量门卫**（git pre-commit 钩子）：提交时必须有两张"通行证"（单元测试通过证 + 质量体检通过证，都在 `test-reports/.passed/` 下，内容第一行是代码指纹），否则门卫拒绝提交。你的职责：在提交前把检查跑完、把通行证拿到手，再存档。
+
+# 两种模式
+
+## 模式一：完整存档（用户说"存档/提交代码/提交"等，默认走这个）
+
+1. **并行派出两个检查员**（在同一条消息里同时发出两个 Agent 调用，都后台运行）：
+   - `tester`：跑单元测试，全过会自己签发 `test-reports/.passed/tests.passed`
+   - `quality-engineer`：做四项体检（编译/测试/注释/安全），达标会自己签发 `test-reports/.passed/quality.passed`
+2. **等两份完成通知都到齐**后再继续（缺一个都不能往下走）。
+3. **验通行证**：`ls test-reports/.passed/` 确认两个文件都在。缺哪个，就说明哪个检查没过——**不提交**，用大白话向主助手汇报"哪项检查没过、为什么"，让用户决定。
+4. **调用 git-save 技能提交**（Skill 工具）。门卫钩子会在 commit 时复核通行证和代码指纹，正常情况应顺利放行；提交成功后通行证自动被回收。
+5. 把结果用大白话汇报给主助手：检查结果 + 存档是否成功 + 推送情况。
+
+## 模式二：快速存档（用户说"快速存档/快速提交"）
+
+1. 只派 `tester` 跑单元测试，等完成。
+2. 确认 `test-reports/.passed/tests.passed` 存在；不存在就汇报"测试没过，不能存档"并停止。
+3. 调用 git-save 技能提交，**传参 `fast`**（技能会用 `git commit --no-verify` 走快速通道——门卫只认完整流程的通行证，快速模式由你担保测试已通过）。
+4. 汇报结果。
+
+# 工作纪律
+
+- **先检查、后提交**：任何情况下都不允许"没跑检查就直接提交"。快速模式是唯一例外，且必须已确认测试通过
+- 如果 git-save 提交被门卫拦下（输出里有"质量门卫"字样）：不要擅自动用 --no-verify 绕过，把拦下的原因用大白话转达主助手
+- 检查员 agent 会自己写/删通行证，你不用替它们写；你只管"验证文件在不在"
+- 给主助手的汇报要简洁：哪项检查过了、哪项没过、存档成功与否，让主助手能直接转达给非技术背景的用户
+
+```
+
+<br>
+
+#### 【20.2.2.1】git commit钩子（提交前，提交后）
+
+【提交前】
+
+```shell
+#!/usr/bin/env bash
+# ============================================================
+# 质量门卫：每次 git commit 之前自动执行
+#
+# 检查两张"通行证"：
+#   1. test-reports/.passed/tests.passed     —— 单元测试通过证（tester 签发）
+#   2. test-reports/.passed/quality.passed   —— 质量体检通过证（quality-engineer 签发）
+#
+# 通行证内容第一行是"代码指纹"（体检那一刻代码的身份证号），
+# 必须和当前代码的指纹一致才有效——体检后又改过代码，指纹对不上，照样拦下。
+#
+# 放行条件：两张证都在 + 指纹都匹配。否则拒绝提交（exit 1）。
+# 紧急绕过：git commit --no-verify（不推荐，正常应让 Claude 执行「存档」流程）。
+# ============================================================
+
+MARKER_DIR="test-reports/.passed"
+TESTS_MARKER="$MARKER_DIR/tests.passed"
+QUALITY_MARKER="$MARKER_DIR/quality.passed"
+
+# 拦下并给出人话提示
+fail() {
+  echo ""
+  echo "🚫 存档被质量门卫拦下：$1"
+  echo "    💡 解决办法：跟我说「存档」（完整检查）或「快速存档」（只跑单元测试），"
+  echo "       检查通过后我会自动重新提交。"
+  echo "    ⚠️  紧急情况可自行执行 git commit --no-verify 强制绕过（不推荐）。"
+  echo ""
+  exit 1
+}
+
+# 第一关：两张通行证必须都在
+[ -f "$TESTS_MARKER" ] || fail "缺少「单元测试通行证」——本次改动还没跑过单元测试"
+[ -f "$QUALITY_MARKER" ] || fail "缺少「质量体检通行证」——本次改动还没做过质量检查"
+
+# 第二关：代码指纹必须和体检时一致
+FP=$(node scripts/quality-gate/fingerprint.mjs 2>/dev/null) || fail "代码指纹计算失败（scripts/quality-gate/fingerprint.mjs 有问题？）"
+
+for m in "$TESTS_MARKER" "$QUALITY_MARKER"; do
+  marked=$(head -n 1 "$m")
+  if [ "$marked" != "$FP" ]; then
+    fail "「$(basename "$m")」已过期——体检之后代码又改过了，请重新跑检查"
+  fi
+done
+
+echo "✅ 质量门卫放行：单元测试 + 质量体检都已通过，且代码与体检时一致。"
+exit 0
+
+```
 
 
 
+【提交后】
+
+```shell
+#!/usr/bin/env bash
+# ============================================================
+# 通行证回收：每次 git commit 成功之后自动执行
+#
+# 把两张"通行证"撕掉——保证下次存档必须重新体检
+# （用户拍板的规则：不设有效期，提交成功即作废通行证）。
+# ============================================================
+
+MARKER_DIR="test-reports/.passed"
+
+rm -f "$MARKER_DIR/tests.passed" "$MARKER_DIR/quality.passed"
+
+echo "🧾 存档成功，通行证已回收（下次存档需重新体检）。"
+exit 0
+
+```
 
 
 
+---
 
+## 【20.3】使用钩子提交存档
 
+提示词1：
 
+```c++
+存档
+```
+
+![image-20260815202105828](img/vibec_20_05.png)
+
+<br>
+
+---
+
+提示词2：
+
+```c++
+存档执行完了吗
+```
+
+![image-20260815204906529](img/vibec_20_06.png)
+
+<br>
+
+---
+
+## 【20.4】hook钩子（有git的hook，而本文的目的是使用claude的hook）
+
+<br>
+
+---
+
+# 【总结】
+
+## 【总结1】skill
+
+1. skill有本地skill，也就是在某个项目中，还有全局技能，也就是可以被所有项目使用；
 
 
 
