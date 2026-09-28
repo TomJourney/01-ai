@@ -689,7 +689,7 @@ description: 把会议转录稿或会议笔记整理成格式统一的会议纪�
 
 【提示词：使用 meeting-minutes 技能整理会议纪要】
 
-![image-20260928201249928](/Users/rong/studynote/01-ai/09_skill/img/skill_11.png)
+![image-20260928201249928](img/skill_11.png)
 
 
 
