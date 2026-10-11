@@ -1307,19 +1307,50 @@ description: 润色文章，提升可读性。当用户要求润色或改稿时�
 已有同名文件时先备份再覆盖。
 ```
 
+<br>
 
+## 【补充】使用技能模版创建技能并使用技能
 
+#### 【提示词】
 
+```c++
+根据这个 ~/studynote/01-ai/09_skill/my_skill_template/01_analyzer_template.md 技能模版，帮我创建用户级别的素材分析技能   
+根据这个 ~/studynote/01-ai/09_skill/my_skill_template/02_outliner_template.md 技能模版，帮我创建用户级别的大纲技能   
+根据这个 ~/studynote/01-ai/09_skill/my_skill_template/03_writer_template.md 技能模版，帮我创建用户级别的写作技能
+根据这个 ~/studynote/01-ai/09_skill/my_skill_template/04_polish_template.md 技能模版，帮我创建用户级别的润色技能
+```
 
+#### 【使用素材分析技能与写作技能】
 
+准备好原始素材，发给智能体，说：
 
+```c++
+先用素材分析技能分析这份素材(~/studynote/01-ai/09_skill/result-discussion-analysis.md)，保存为 analysis.md，然后用写作技能根据分析结果写一篇文章，加载我的写作风格技能，保存草稿文件为draft.md。analysis.md 与 draft.md 文件保存目录为原始素材所在目录。
+```
 
+#### 【使用素材分析技能+大纲技能+写作技能】
 
+```c++
+先用素材分析技能分析这份素材(~/studynote/01-ai/09_skill/result-discussion-analysis.md)，保存为 analysis.md, 再根据原始素材和analysis.md生成三个大纲方案给我选择，最后按照我选择的大纲使用写作技能写一篇文章，加载我的写作风格技能，保存草稿文件为draft.md。analysis.md 与 draft.md 文件保存目录为原始素材所在目录。
+```
 
+![image-20261011171636601](img/skill_27.png)
 
+接着，智能体让用户选择大纲：
 
+![image-20261011171734161](img/skill_28.png)
 
+<br>
 
+#### 【使用4个技能写文章：素材分析技能+大纲技能+写作技能+润色技能】
+
+```c++
+先用素材分析技能分析这份素材(~/studynote/01-ai/09_skill/result-discussion-analysis.md)，保存为 analysis.md, 再根据原始素材和analysis.md生成三个大纲方案给我选择，然后按照我选择的大纲使用写作技能写一篇文章，加载我的写作风格技能，保存草稿文件为draft.md，最后使用润色技能对草稿进行润色处理。其中analysis.md 与 draft.md 文件保存目录为原始素材所在目录。
+```
+
+![image-20261011172919854](img/skill_29.png)
+
+<br>
 
 
 
